@@ -8,6 +8,7 @@ import authRouter from './routes/auth.route.js';
 import userRouter from './routes/user.route.js';
 import productsRouter from './routes/product.route.js';
 import categoriesRouter from './routes/category.route.js';
+import cartRouter from './routes/cart.route.js';
 dotenv.config();
 const app: express.Application = express();
 
@@ -20,6 +21,7 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/products', productsRouter);
 app.use('/api/v1/categories', categoriesRouter);
+app.use('/api/v1/cart', cartRouter);
 const PORT = process.env.PORT || 3000;
 
 app.use((req: express.Request, res: express.Response) => {
