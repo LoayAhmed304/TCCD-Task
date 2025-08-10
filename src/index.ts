@@ -9,6 +9,7 @@ import userRouter from './routes/user.route.js';
 import productsRouter from './routes/product.route.js';
 import categoriesRouter from './routes/category.route.js';
 import cartRouter from './routes/cart.route.js';
+import cartItemsRouter from './routes/cartitem.route.js';
 dotenv.config();
 const app: express.Application = express();
 
@@ -22,6 +23,7 @@ app.use('/api/v1/users', userRouter);
 app.use('/api/v1/products', productsRouter);
 app.use('/api/v1/categories', categoriesRouter);
 app.use('/api/v1/cart', cartRouter);
+app.use('/api/v1/cartItems', cartItemsRouter);
 const PORT = process.env.PORT || 3000;
 
 app.use((req: express.Request, res: express.Response) => {
