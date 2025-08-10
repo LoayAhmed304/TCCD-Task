@@ -24,12 +24,12 @@ export const getProducts = async (req: Request, res: Response) => {
 export const createProduct = async (req: Request, res: Response) => {
   try {
     const { name, price, stock, category_id } = req.body;
-    const query = `INSERT INTO products (name, price, stock, category_id) VALUES($1, $2, $3, $4)`;
+    const query = `INSERT INTO products (name, price, stock, category_id) VALUES($1, $2, $3, $4) RETURNING *`;
 
     const newProduct = await client.query(query, [
       name,
-      stock,
       price,
+      stock,
       category_id,
     ]);
     res.status(201).json({

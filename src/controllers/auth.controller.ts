@@ -1,5 +1,4 @@
 import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import client from '../db/db.js';
 import { generateToken } from '../lib/utils.js';

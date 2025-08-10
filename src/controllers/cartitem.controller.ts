@@ -1,19 +1,15 @@
 import client from '../db/db.js';
 import { Request, Response } from 'express';
 
-export const getAllCartItems = async (req: Request, res: Response) => {
-  const cartId = +req.params.id;
-  if (!cartId) {
-    return res.status(400).json({ status: 'fail', message: 'Invalid cart ID' });
-  }
+export const getMyCartItems = async (req: Request, res: Response) => {
   try {
     const query = `
-    SELECT cart_items.* , products.name AS product_name, products.price AS product_price FROM cart_items
-    JOIN carts ON carts.id = cart_items.cart_id AND carts.user_id = $2
+    SELECT cart_items.* , products.name AS product_name, products.price AS product_price 
+    FROM cart_items
+    JOIN carts ON carts.id = cart_items.cart_id AND carts.user_id = $1
     JOIN products ON products.id = cart_items.product_id
-    WHERE cart_items.cart_id = $1
-    `;
-    const cartItems = await client.query(query, [cartId, req.user?.id]);
+    WHERE carts.user_id = $1`;
+    const cartItems = await client.query(query, [req.user?.id]);
 
     if (!cartItems.rows.length) {
       return res
@@ -24,6 +20,32 @@ export const getAllCartItems = async (req: Request, res: Response) => {
     res.status(200).json({ status: 'success', data: cartItems.rows });
   } catch (err: any) {
     console.error('Error fetching cart items: ', err);
+    res.status(500).json({ status: 'fail', message: 'Internal server error' });
+  }
+};
+
+export const getAllCartItems = async (req: Request, res: Response) => {
+  const cartId = +req.params.id;
+  if (!cartId) {
+    return res.status(400).json({ status: 'fail', message: 'Invalid cart ID' });
+  }
+  try {
+    const query = `
+    SELECT cart_items.*, products.name AS product_name, products.price AS product_price
+    FROM cart_items
+    JOIN carts ON carts.id = cart_items.cart_id
+    JOIN products ON products.id = cart_items.product_id
+    WHERE carts.id = $1
+    `;
+    const cartItems = await client.query(query, [cartId]);
+    if (!cartItems.rows.length) {
+      return res
+        .status(404)
+        .json({ status: 'fail', message: 'No cart items found' });
+    }
+    res.status(200).json({ status: 'success', data: cartItems.rows });
+  } catch (err) {
+    console.error('Error fetching all cart items: ', err);
     res.status(500).json({ status: 'fail', message: 'Internal server error' });
   }
 };
@@ -45,11 +67,23 @@ export const createCartItem = async (req: Request, res: Response) => {
       'SELECT * FROM carts WHERE id = $1 AND user_id = $2',
       [cartId, req.user?.id]
     );
-    console.log('Cart ID:', cartId, '<User ID:', req.user?.id, '>');
     if (!cartCheck.rows.length) {
       return res
         .status(404)
         .json({ status: 'fail', message: "Cart not found or isn't yours" });
+    }
+
+    const checkValidQuantityQuery = `
+    SELECT stock
+    FROM products    
+    WHERE products.id = $1
+    `;
+    const stock = await client.query(checkValidQuantityQuery, [productId]);
+    if (stock.rows.length === 0 || stock.rows[0].stock < quantity) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Insufficient product stock',
+      });
     }
 
     const query = `
@@ -69,6 +103,11 @@ export const createCartItem = async (req: Request, res: Response) => {
       return res
         .status(404)
         .json({ status: 'fail', message: 'Product not found' });
+    }
+    if (err.message.includes('duplicate')) {
+      return res
+        .status(400)
+        .json({ status: 'fail', message: 'Product already exists' });
     }
     console.error('Error creating cart item: ', err);
     res.status(500).json({ status: 'fail', message: 'Internal server error' });
@@ -138,6 +177,20 @@ export const updateCartItem = async (req: Request, res: Response) => {
       return res.status(404).json({
         status: 'fail',
         message: "Cart item not found or isn't yours",
+      });
+    }
+    const checkValidQuantityQuery = `
+    SELECT stock
+    FROM products
+    JOIN cart_items ON cart_items.product_id = products.id
+    WHERE cart_items.id = $1
+    `;
+    const stock = await client.query(checkValidQuantityQuery, [itemId]);
+    console.log(stock.rows[0]);
+    if (stock.rows.length === 0 || stock.rows[0].stock < quantity) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Insufficient product stock',
       });
     }
 
