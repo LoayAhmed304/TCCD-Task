@@ -1,6 +1,12 @@
-CREATE DATABASE ecommerce_db;
-
 \c ecommerce_db;
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    email VARCHAR NOT NULL,
+    password VARCHAR NOT NULL,
+    role VARCHAR CHECK (role IN ('admin', 'user')) DEFAULT 'user'
+);
 
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
